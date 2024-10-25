@@ -24,18 +24,26 @@
 
 # The CLI application for running the `riscv-vm` backend
 
+## install
+
 to install just run
+
 ```sh
 ./install.sh
 ```
+
 this just adds the completions file to the proper location
 
-*you can still just `cargo install` you just dont get any completions*
+### you can still just `cargo install` you just dont get any completions
+
+## uninstall
 
 to uninstall
+
 ```sh
 ./uninstall.sh
 ```
+
 this removes the bin and completions
 
 # How to run programs?
@@ -46,6 +54,6 @@ TODO: write docs
 
 not quite yet but xv6-riscv32 is a work in progress (and linux kernel)
 
-# Star it!
+# Star it
 
 please!
