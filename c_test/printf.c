@@ -1,4 +1,3 @@
-
 ///////////////////////////////////////////////////////////////////////////////
 // \author (c) Marco Paland (info@paland.com)
 //             2014-2019, PALANDesign Hannover, Germany
@@ -32,44 +31,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <sys/cdefs.h>
-
+#include "debug.h"
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
-
-#include "debug.h"
-
-// CUSTOM ADDITIONS
-int char2int(char c) { return c - '0'; }
-
-char get_char(void) {
-    while ((UART(5) & 0x01) == 0)
-        ;
-    return UART(0);
-}
-
-void get_string(char *buffer, int size) {
-    int i = 0;
-    char c = get_char();
-    while (c != '\n') {
-        if (i < size) {
-            buffer[i] = c;
-            i++;
-        }
-        c = get_char();
-    }
-    buffer[i] = '\0';
-}
-
-int str2int(const char *str, int base) {
-    int result = 0;
-    int i = 0;
-    while (str[i] != '\0') {
-        result = result * base + char2int(str[i]);
-        i++;
-    }
-    return result;
-}
+#include <stddef.h>
 
 // define this globally (e.g. gcc -DPRINTF_INCLUDE_CONFIG_H ...) to include the
 // printf_config.h header file
@@ -113,7 +79,7 @@ int str2int(const char *str, int base) {
 // define the largest float suitable to print with %f
 // default: 1e9
 #ifndef PRINTF_MAX_FLOAT
-#define PRINTF_MAX_FLOAT 1e9
+#define PRINTF_MAX_FLOAT 10e9
 #endif
 
 // support for the long long types (%llu or %p)
@@ -150,11 +116,93 @@ int str2int(const char *str, int base) {
 #include <float.h>
 #endif
 
+int putchar(int character) {
+	// write character to stdout
+	_putchar(character);
+	return 0;
+}
+
+int puts(const char *s) {
+	// write string to stdout
+	while (*s) {
+		_putchar(*s++);
+	}
+	// write newline
+	_putchar('\n');
+	return 0;
+}
+
+void _putchar(char character) { UART(0) = character; }
+
+// custom vsprintf implementation
+int vsprintf(char *buffer, const char *format, va_list va) {
+	return vsnprintf(buffer, (size_t)-1, format, va);
+}
+
+// custom vfprintf implementation
+int vfprintf(FILE *stream, const char *format, va_list va) {
+	(void)stream;
+	return vsnprintf(NULL, (size_t)-1, format, va);
+}
+
+// custom fflush implementation
+int fflush(FILE *stream) {
+	(void)stream;
+	return 0;
+}
+
+// custom fputc implementation
+int fputc(int c, FILE *stream) {
+	(void)stream;
+	_putchar(c);
+	return c;
+}
+
+// custom fputs implementation
+int fputs(const char *s, FILE *stream) {
+	(void)stream;
+	while (*s) {
+		_putchar(*s++);
+	}
+	return 0;
+}
+
+// custom popen implementation
+FILE *popen(const char *command, const char *mode) {
+	(void)command;
+	(void)mode;
+	return NULL;
+}
+
+// custom pclose implementation
+int pclose(FILE *stream) {
+	(void)stream;
+	return 0;
+}
+
+// custom fseek implementation
+int fseek(FILE *stream, long int offset, int whence) {
+	(void)stream;
+	(void)offset;
+	(void)whence;
+	return 0;
+}
+
+// custom ftell implementation
+long int ftell(FILE *stream) {
+	(void)stream;
+	return 0;
+}
+
+// custom feof implementation
+int feof(FILE *stream) {
+	(void)stream;
+	return 0;
+}
+
 // output function type
 typedef void (*out_fct_type)(char character, void *buffer, size_t idx,
                              size_t maxlen);
-
-void _putchar(char character) { UART(0) = character; }
 
 // wrapper (used as buffer) for output function type
 typedef struct {
@@ -171,8 +219,8 @@ static inline void _out_buffer(char character, void *buffer, size_t idx,
 }
 
 // internal null output
-static inline __always_inline void _out_null(char character, void *buffer,
-                                             size_t idx, size_t maxlen) {
+static inline void _out_null(char character, void *buffer, size_t idx,
+                             size_t maxlen) {
     (void)character;
     (void)buffer;
     (void)idx;
@@ -180,8 +228,8 @@ static inline __always_inline void _out_null(char character, void *buffer,
 }
 
 // internal _putchar wrapper
-static inline __always_inline void _out_char(char character, void *buffer,
-                                             size_t idx, size_t maxlen) {
+static inline void _out_char(char character, void *buffer, size_t idx,
+                             size_t maxlen) {
     (void)buffer;
     (void)idx;
     (void)maxlen;
@@ -626,14 +674,6 @@ static size_t _etoa(out_fct_type out, char *buffer, size_t idx, size_t maxlen,
 #endif // PRINTF_SUPPORT_EXPONENTIAL
 #endif // PRINTF_SUPPORT_FLOAT
 
-#define DEBUG_MSG(msg)                                                         \
-    {                                                                          \
-        const char *_msg = msg;                                                \
-        while (*_msg) {                                                        \
-            _putchar(*_msg++);                                                 \
-        }                                                                      \
-    }
-
 // internal vsnprintf
 static int _vsnprintf(out_fct_type out, char *buffer, const size_t maxlen,
                       const char *format, va_list va) {
@@ -727,9 +767,6 @@ static int _vsnprintf(out_fct_type out, char *buffer, const size_t maxlen,
             flags |= FLAGS_LONG;
             format++;
             if (*format == 'l') {
-#ifndef PRINTF_SUPPORT_LONG_LONG
-                DEBUG_MSG("LONG LONG SUPPORT DISABLED!");
-#endif
                 flags |= FLAGS_LONG_LONG;
                 format++;
             }
@@ -801,7 +838,6 @@ static int _vsnprintf(out_fct_type out, char *buffer, const size_t maxlen,
 
             // convert the integer
             if ((*format == 'i') || (*format == 'd')) {
-
                 // signed
                 if (flags & FLAGS_LONG_LONG) {
 #if defined(PRINTF_SUPPORT_LONG_LONG)
@@ -965,7 +1001,7 @@ static int _vsnprintf(out_fct_type out, char *buffer, const size_t maxlen,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-int printf_(const char *format, ...) {
+int printf(const char *format, ...) {
     va_list va;
     va_start(va, format);
     char buffer[1];
@@ -974,7 +1010,7 @@ int printf_(const char *format, ...) {
     return ret;
 }
 
-int sprintf_(char *buffer, const char *format, ...) {
+int sprintf(char *buffer, const char *format, ...) {
     va_list va;
     va_start(va, format);
     const int ret = _vsnprintf(_out_buffer, buffer, (size_t)-1, format, va);
@@ -982,7 +1018,7 @@ int sprintf_(char *buffer, const char *format, ...) {
     return ret;
 }
 
-int snprintf_(char *buffer, size_t count, const char *format, ...) {
+int snprintf(char *buffer, size_t count, const char *format, ...) {
     va_list va;
     va_start(va, format);
     const int ret = _vsnprintf(_out_buffer, buffer, count, format, va);
@@ -990,12 +1026,12 @@ int snprintf_(char *buffer, size_t count, const char *format, ...) {
     return ret;
 }
 
-int vprintf_(const char *format, va_list va) {
+int vprintf(const char *format, va_list va) {
     char buffer[1];
     return _vsnprintf(_out_char, buffer, (size_t)-1, format, va);
 }
 
-int vsnprintf_(char *buffer, size_t count, const char *format, va_list va) {
+int vsnprintf(char *buffer, size_t count, const char *format, va_list va) {
     return _vsnprintf(_out_buffer, buffer, count, format, va);
 }
 
@@ -1004,7 +1040,7 @@ int fctprintf(void (*out)(char character, void *arg), void *arg,
     va_list va;
     va_start(va, format);
     const out_fct_wrap_type out_fct_wrap = {out, arg};
-    const int ret = _vsnprintf(_out_fct, (char *)(uintptr_t)&out_fct_wrap,
+    const int ret = _vsnprintf(_out_buffer, (char *)(uintptr_t)&out_fct_wrap,
                                (size_t)-1, format, va);
     va_end(va);
     return ret;
