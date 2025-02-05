@@ -27,7 +27,7 @@
 to install just run
 
 ```sh
-./install.sh
+cargo install --path .
 ```
 
 this just adds the completions file to the proper location
@@ -39,7 +39,7 @@ this just adds the completions file to the proper location
 to uninstall
 
 ```sh
-./uninstall.sh
+cargo uninstall rv32
 ```
 
 this removes the bin and completions
