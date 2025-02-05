@@ -1,5 +1,5 @@
 [package]
-name = "rv32-emulator"
+name = "r32emu"
 version = "0.2.2"
 edition = "2021"
 
