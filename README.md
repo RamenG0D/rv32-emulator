@@ -30,19 +30,23 @@ to install just run
 cargo install --path .
 ```
 
-this just adds the completions file to the proper location
+to add completions to your shell, you need to add the output of this command to you shells
+rc script or other start script
+
+for zsh
+```zsh
+source <(rvemu completions)
+```
 
 ### you can still just `cargo install` you just dont get any completions
 
 ## uninstall
 
-to uninstall
+just run
 
 ```sh
-cargo uninstall rv32emu
+cargo uninstall rvemu
 ```
-
-this removes the bin and completions
 
 # How to run programs?
 
@@ -70,7 +74,7 @@ this basically removes all the extra stuff from the elf format leaving only the 
 
 it can then be run with
 ```sh
-rv32emu run < program >.bin
+rvemu run < program >.bin
 ```
 
 TODO: write docs

@@ -1,5 +1,5 @@
 [package]
-name = "r32emu"
+name = "rvemu"
 version = "0.2.2"
 edition = "2021"
 
